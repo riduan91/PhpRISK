@@ -128,6 +128,7 @@ var attacking_territory_to;
 var last_card;
 var last_card_order;
 var last_card_taken;
+var sound;
 
 window.onload = function(){
 	setInterval(function(){
@@ -253,6 +254,7 @@ function resetnow(){
 	last_card = double_shuffled_cards[last_card_order];
 
 	last_card_taken = 0;
+	sound = 0;
 	
 	var s = "";
 	s += "nb_players=" + nb_players;
@@ -266,6 +268,7 @@ function resetnow(){
 	s += "&last_card=" + last_card;
 	s += "&last_card_order=" + last_card_order;
 	s += "&last_card_taken=" + last_card_taken;
+	s += "&sound=" + sound;
 	s += "&names=" + names.join();
 	s += "&territories_by_player=" + territories_by_player.join();
 	
@@ -367,6 +370,7 @@ function parseDataFromPHP(){
 	last_card = parseInt(document.getElementById("r_last_card").value);
 	last_card_order = parseInt(document.getElementById("r_last_card_order").value);
 	last_card_taken = parseInt(document.getElementById("r_last_card_taken").value);
+	sound = parseInt(document.getElementById("r_sound").value);
 	
 	active_player = currentActivePlayer();
 	
@@ -428,7 +432,6 @@ function printPlayerMap(){
 		}
 			
 		else if (attacking && attacking_territory_to == i && current_player == territories_by_player[i]){
-			console.log("yes");
 			clickable = 1;
 		}
 		
@@ -498,13 +501,14 @@ function printCards(){
 	
 	for (var i = cards_held_by_player[current_player].length; i < 5; ++i){
 		var card = document.getElementById('card' + i);
-		card.src = '';
 		card.style.display = 'none';
 	}
     	
     if (battle_status[current_player] == STATUS_ACTIVE_FOR_TUNE_IN){
 		document.getElementById('submit_for_tune_in').style.display = 'block';
-    }
+    } else {
+		document.getElementById('submit_for_tune_in').style.display = 'none';
+	}
 };
 
 
@@ -524,10 +528,16 @@ function checkFinish(){
 		document.getElementById('winner').innerHTML = winner().join(", ") + " won with the most number of territories.";
     	
     for (var player=0; player < nb_players; ++player){
-		document.getElementById('card' + player).display = 'block';
+		document.getElementById('card' + player).style.display = 'block';
     	document.getElementById('card' + player).src = 'Img/M' + mission_of_player[player] + ".png";
 		document.getElementById('card' + player).onclick = '';
+		document.getElementById('final_mission' + player).style.display = 'block';
+		document.getElementById('final_mission' + player).innerHTML = names[player];
     }
+	
+	for (var player = nb_players; player < 5; ++player){
+		document.getElementById('card' + player).style.display = 'none';
+	}
 }
 		
 function printMission(){
@@ -549,6 +559,12 @@ function printDices(){
 			current_dice.src = 'Img/A0.png';
 		}
     }
+	
+	for (var dice = attack_dices.length; dice < 3; dice++){
+		var current_dice = document.getElementById('A' + dice);
+		current_dice.class = '';
+		current_dice.src = 'Img/A0.png';
+    }
     	
 	for (var dice = 0; dice < defend_dices.length; dice++){
     	if (defend_dices[dice] > 0){
@@ -560,6 +576,12 @@ function printDices(){
 			current_dice.class = '';
 			current_dice.src = 'Img/D0.png';
 		}
+    }
+	
+	for (var dice = defend_dices.length; dice < 2; dice++){
+		var current_dice = document.getElementById('D' + dice);
+		current_dice.class = '';
+		current_dice.src = 'Img/D0.png';
     }
 };
 		
@@ -627,7 +649,7 @@ function printNotification(){
 		
 		if (save && !attacking && current_player == active_player){
 			var localmax = Math.min(3, nb_soldiers_on_territory[attacking_territory_from] - 1);
-    		if (localmax > 1){
+    		if (localmax >= 1){
 				document.getElementById("number_range").max = "" + localmax;
 				document.getElementById("number_range").value = "" + localmax;
 				document.getElementById("number_range").style.display = "block";
@@ -651,6 +673,7 @@ function printNotification(){
 	//FORTIFICATION
 	else if (battle_status[active_player] == STATUS_ACTIVE_FOR_FORTIFICATION){
     	document.getElementById("whichstep").innerHTML = "Fortification";
+		document.getElementById("number_range").style.display = "none";
     		
     	if (current_player == active_player){
     		
@@ -663,14 +686,15 @@ function printNotification(){
 
     		else{
 				document.getElementById("attacking_from").style.display = "none";
-				document.getElementById("attacking_to").style.display = "to";
+				document.getElementById("attacking_to").style.display = "none";
 				document.getElementById("number").style.display = "none";
     			document.getElementById("finish").style.display = "block";
 				document.getElementById("finish").innerHTML = "Finish fortification";
 				document.getElementById("finish").onclick =  function(a1) { return function(){finishFortification(a1) }}(current_player);
     		}
     	} else {
-			document.getElementById("attacking_from").style.display = "block";
+			document.getElementById("attacking_from").style.display = "none";
+			document.getElementById("attacking_to").style.display = "none";
 			document.getElementById("number").style.display = "none";
 			document.getElementById("number_range").style.display = "none";
 			document.getElementById("number_sign").style.display = "none";
@@ -698,6 +722,15 @@ function printUpdateZone(){
     	document.getElementById("undo").style.display = "inline";
     } else {
 		document.getElementById("undo").style.display = "none";
+	}
+	
+	if (attacking && territories_by_player[attacking_territory_to] == current_player && sound >= 1){
+		document.getElementById("gunsound").src = "gun.mp3";
+		sound = (sound + 1)%3;
+		s = "sound=" + sound;
+		updateSql(s);
+	} else {
+		document.getElementById("gunsound").src = "";
 	}
 };
 
@@ -859,8 +892,8 @@ function addMany(player, territory, number){
 		}
 			
 		else {
-			if (battleStatusSum() < 10)
-			goToNextStep();
+			if (battleStatusSum() < 10 && battle_status[current_player] <= 2)
+				goToNextStep();
 		}
 	}
 	
@@ -910,9 +943,7 @@ function goToNextStep(){
 		
 	//If fortified, next player. If tune in and player lost, go to next player until get an alive player
 	else if (battle_status[active_player] == STATUS_ACTIVE_FOR_FORTIFICATION){
-		console.log(getNextPlayer(active_player));
 		battle_status[getNextPlayer(active_player)] = 1;
-		console.log(getNextPlayer(active_player));
 		battle_status[active_player] = 0;
 	}
 		
@@ -1181,6 +1212,7 @@ function attack(player, territory_from, territory_to, number){
 	var s = "attacking=" + attacking;
 	s += "&attack_dices=" + attack_dices.join();
 	s += "&attacking_territory_to=" + attacking_territory_to;
+	s += "&sound=1";
 	updateSql(s);
 	printMap();
 	printNotification();
@@ -1266,6 +1298,7 @@ function defend(player, territory_from, territory_to){
 	s += "&territories_by_player=" + territories_by_player.join();
 	s += "&t" + territory_from + "=" + nb_soldiers_on_territory[territory_from];
 	s += "&t" + territory_to + "=" + nb_soldiers_on_territory[territory_to];
+	s += "&sound=0";
 	updateSql(s);
 	printMap();
 	printNotification();
@@ -1320,9 +1353,12 @@ function finishAttack(player){
 //-------------------------------------------------
 
 function fortify(player, territory_from, territory_to, number){
-	nb_soldiers_on_territory[territory_from] -= number;
-	nb_soldiers_on_territory[territory_to] += number;
-		
+
+	if (okForFortification(player, territory_from, territory_to, number)){
+		nb_soldiers_on_territory[territory_from] -= number;
+		nb_soldiers_on_territory[territory_to] += number;
+	}
+	
 	attacking_territory_from = -1;
 	attacking_territory_to = -1;
 		
@@ -1353,7 +1389,7 @@ function okForFortification(player, territory_from, territory_to, number){
 		return false;
 	}
 
-	if (nb > this.nb_soldiers_on_territory[territory_from] - 1){
+	if (number > this.nb_soldiers_on_territory[territory_from] - 1){
 		return false;
 	}
 		
@@ -1404,6 +1440,7 @@ function finishFortification(player){
 	updateSql(s);
 	printNotification();
 	printPlayerMap();
+	printCards();
 }
 
 function takeACard(player){
@@ -1415,6 +1452,7 @@ function takeACard(player){
 	}
 		
 	cards_held_by_player[player].push(random_card);
+	document.getElementById("card" + (cards_held_by_player[player].length - 1)).style.opacity = 1.0
 }
 
 //--------------------------------------
@@ -1456,7 +1494,8 @@ function updateSql(s){
 		if (this.readyState == 4 && this.status == 200) {
 			console.log(s);
 			document.getElementById("private_data").innerHTML = this.responseText;
-			reload();
+			if (sound <= 1)
+				reload();
 		}
 	};
 
@@ -1484,8 +1523,11 @@ function getCookie(cname) {
 function finished(){
 	if (last_card_taken)
 		return true;
+	
 	for (var player = 0; player < nb_players; player++){
 		if (missionCompleted(player))
+			return true;
+		if (getTerritoriesOccupedBy(player).length == NB_TERRITORIES)
 			return true;
 	}
 		
@@ -1506,8 +1548,9 @@ function missionCompleted(player){
 		
 	if (mission_of_player[player] == 5 && getTerritoriesOccupedBy(player).length >= 18){
 		var count = 0;
-		for (var i = 0; i < getTerritoriesOccupedBy(player).length; ++i){
-			if (nb_soldiers_on_territory[i] >= 2){
+		var tb = getTerritoriesOccupedBy(player);
+		for (var i = 0; i < tb.length; ++i){
+			if (nb_soldiers_on_territory[tb[i]] >= 2){
 				count += 1;
 			}
 		}

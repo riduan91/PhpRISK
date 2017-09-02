@@ -1,182 +1,30 @@
-<!DOCTYPE html>
-<script type="text/javascript" src="code.js"></script>
 <html>
+    <script>
+	var today = new Date();
+  	var expiry = new Date(today.getTime() + 30 * 24 * 3600 * 1000); // plus 30 days
+
+  	function setCookie(name, value)
+  	{
+    	document.cookie=name + "=" + escape(value) + "; path=/; expires=" + expiry.toGMTString();
+  	}
+
+  	function putCookie(form)
+                //this should set the UserName cookie to the proper value;
+  	{
+   		setCookie("userName", form[0].usrname.value);
+		document.getElementById('Hello').innerHTML = "Hello " + form[0].usrname.value + "! Please click 'Go to the battle!' to play'";
+    	return true;
+  	}
+
+  </script>
 <body>
-
-<div id="private_data" style="display:none"></div>
-
-<!-- WORLD MAP -->
-<img src='Img/W.png' style='left:825px; top:10px; width:350px; height:740px; opacity:0.1; position:absolute'>
-<img src='Img/U.png' style='left:10px; top:460px; width:800px; height:290px; opacity:0.1; position:absolute'>
-<img id='territoryA' src='Img/A.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1; position:absolute'>
-<img class='territory' id='territory0' src='Img/0.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory1' src='Img/1.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory2' src='Img/2.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory3' src='Img/3.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory4' src='Img/4.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory5' src='Img/5.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory6' src='Img/6.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory7' src='Img/7.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory8' src='Img/8.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory9' src='Img/9.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory10' src='Img/10.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory11' src='Img/11.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory12' src='Img/12.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory13' src='Img/13.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory14' src='Img/14.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory15' src='Img/15.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory16' src='Img/16.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory17' src='Img/17.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory18' src='Img/18.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory19' src='Img/19.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory20' src='Img/20.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory21' src='Img/21.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory22' src='Img/22.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory23' src='Img/23.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory24' src='Img/24.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory25' src='Img/25.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory26' src='Img/26.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory27' src='Img/27.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory28' src='Img/28.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory29' src='Img/29.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory30' src='Img/30.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory31' src='Img/31.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory32' src='Img/32.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory33' src='Img/33.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory34' src='Img/34.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory35' src='Img/35.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory36' src='Img/36.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory37' src='Img/37.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory38' src='Img/38.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory39' src='Img/39.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory40' src='Img/40.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-<img class='territory' id='territory41' src='Img/41.png' style='left:10px; top:10px; width:800px; height:440px; opacity:1.0; position:absolute'>
-
-<!-- CANVAS -->
-<canvas id='myCanvas' width='800' height='440' style='left:10px; top:10px; position:absolute; z-index:99; opacity: 0.8'></canvas>
-<img src='Img/A.png' style='left:10px; top:10px; width:800px; height:440px; opacity:0; position:absolute; z-index:100;' usemap='#worldmap'>
-<map id='worldmap' name='worldmap'>
-
-<area id='area0'>
-<area id='area1'>
-<area id='area2'>
-<area id='area3'>
-<area id='area4'>
-<area id='area5'>
-<area id='area6'>
-<area id='area7'>
-<area id='area8'>
-<area id='area9'>
-<area id='area10'>
-<area id='area11'>
-<area id='area12'>
-<area id='area13'>
-<area id='area14'>
-<area id='area15'>
-<area id='area16'>
-<area id='area17'>
-<area id='area18'>
-<area id='area19'>
-<area id='area20'>
-<area id='area21'>
-<area id='area22'>
-<area id='area23'>
-<area id='area24'>
-<area id='area25'>
-<area id='area26'>
-<area id='area27'>
-<area id='area28'>
-<area id='area29'>
-<area id='area30'>
-<area id='area31'>
-<area id='area32'>
-<area id='area33'>
-<area id='area34'>
-<area id='area35'>
-<area id='area36'>
-<area id='area37'>
-<area id='area38'>
-<area id='area39'>
-<area id='area40'>
-<area id='area41'>
-<!--
-<area id='area7' shape='rect' onmouseover='brighten(1, 7)' onmouseout='darken(7)';>
-<area id='area8' shape='rect' onmouseover='brighten(1, 8)' onmouseout='darken(8)';>
-<area id='area9' shape='rect' onmouseover='brighten(1, 9)' onmouseout='darken(9)';>
-<area id='area10' shape='rect' onmouseover='brighten(1, 10)' onmouseout='darken(10)';>
-<area id='area11' shape='rect' onmouseover='brighten(1, 11)' onmouseout='darken(11)';>
-<area id='area12' shape='rect' onmouseover='brighten(1, 12)' onmouseout='darken(12)';>
-<area id='area20' shape='rect' onmouseover='brighten(1, 20)' onmouseout='darken(20)';>
-<area id='area21' shape='rect' onmouseover='brighten(1, 21)' onmouseout='darken(21)';>
-<area id='area22' shape='rect' onmouseover='brighten(1, 22)' onmouseout='darken(22)';>
-<area id='area23' shape='rect' onmouseover='brighten(1, 23)' onmouseout='darken(23)';>
-<area id='area24' shape='rect' onmouseover='brighten(1, 24)' onmouseout='darken(24)';>
-<area id='area25' shape='rect' onmouseover='brighten(1, 25)' onmouseout='darken(25)';>
-<area id='area26' shape='rect' onmouseover='brighten(1, 26)' onmouseout='darken(26)';>
-<area id='area27' shape='rect' onmouseover='brighten(1, 27)' onmouseout='darken(27)';>
-<area id='area28' shape='rect' onmouseover='brighten(1, 28)' onmouseout='darken(28)';>
--->
-
-</map>
-
-<!--
-<input type='text' id='territories_by_player' value='[0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]'style='display:none;'></input>
-<input type='text' id='nb_soldiers_on_territory' value='[12, 1, 1, 1, 1, 1, 35, 6, 10, 2, 1, 3, 3, 2, 2, 2, 4, 11, 11, 13, 13, 12, 2, 1, 1, 1, 22, 10, 21, 7, 9, 10, 3, 3, 3, 25, 3, 4, 1, 1, 1, 1]'style='display:none;'></input>
-<input type='text' id='chosen_territory' value='' style='display:none;'></input>
--->
-
-<h3 style='color:green; left:850px; top:460px; position:absolute'>Your mission</h3>
-<h3 style='color:green; left:1010px; top:460px; position:absolute'>Stop card</h3>
-<img class='card' id='mission' src='Img/MA.png' style='left:850px; top:510px; width:140px; height:220px; position:absolute;' onclick='updownmission();'>
-<img class='card' id='last_card' src='Img/CA.png' style='left:1010px; top:510px; width:140px; height:220px; position:absolute'>
-
-<img id='A0' src='Img/A0.png' style='left:850px; top:330px; width:50px; height:50px; position:absolute; opacity:0.7'>
-<img id='A1' src='Img/A0.png' style='left:920px; top:330px; width:50px; height:50px; position:absolute; opacity:0.7'>
-<img id='A2' src='Img/A0.png' style='left:990px; top:330px; width:50px; height:50px; position:absolute; opacity:0.7'>
-<img id='D0' src='Img/D0.png' style='left:850px; top:400px; width:50px; height:50px; position:absolute; opacity:0.7'>
-<img id='D1' src='Img/D0.png' style='left:920px; top:400px; width:50px; height:50px; position:absolute; opacity:0.7'>
-
-<form id='form_notification' style='left:850px; top:10px; position:absolute'>
-<!--
-<input type='text' id='battle_status' value='4' style='display:none;'>-->
-<h3 id='whoseturn'></h3>
-<h3 id='whichstep'></h3>
-<p id='regimentsleft' style='display:none'></p>
-<input id='number' type='number' size='10' value=0 onchange='notify()' style='display:none'></p>
-<h5 id='attacking_from' style='color:red; display:none'></h5>
-<h5 id='attacking_to' style='color:red; display:none'></h5>
-<input id='number_range' type='range'  min='1' max='3' value='3' onchange='changerange();' style='display:none' />
-<p id='number_sign' style='color:red; display:none; '>3</p>
-<button type='button' id='finish' style='display:none;'></button>
-<input id='namestring' type='text' style='display:none;'></p>
-<button type='button' id='reset' style='display:none;' onclick='resetnow();'>Reset</button>
-</form>
-
-<form id='form_nextturnin' style='left:850px; top:210px; position:absolute'>
-<h3 id='nextturnin'></h3>
-</form>
-
-<form id='form_refresh' style='left:850px; top:280px; position:absolute'>
-<a id='refresh' href='index.html'>Refresh</a>
-<button type='button' id='undo' style='display:none;' onclick='myundo();'>Undo</button>
-</form>
-
-<form id='form_cards' style='color:green; left:10px; top:480px; width:800px; position:absolute'>
-<h1 id='winner'></h1>
-
-
-<img class='card' id='card0' src='Img/CA.png' style='left:10px; top:20px; width:140px; height:220px; position:absolute; display:none;' onclick=''>
-<img class='card' id='card1' src='Img/CA.png' style='left:170px; top:20px; width:140px; height:220px; position:absolute; display:none;' onclick=''>
-<img class='card' id='card2' src='Img/CA.png' style='left:330px; top:20px; width:140px; height:220px; position:absolute; display:none;' onclick=''>
-<img class='card' id='card3' src='Img/CA.png' style='left:490px; top:20px; width:140px; height:220px; position:absolute; display:none;' onclick=''>
-<img class='card' id='card4' src='Img/CA.png' style='left:650px; top:20px; width:140px; height:220px; position:absolute; display:none;' onclick=''>
-<input type='text' id='tune_in_card_1' value='' style='display:none;'></input>
-<input type='text' id='tune_in_card_2' value='' style='display:none;'></input>
-<input type='text' id='tune_in_card_3' value='' style='display:none;'></input>
-<button type='button' id='submit_for_tune_in' style='left:10px; top:260px; position:absolute; display:none;'>Turn in</button>
-</form>
-
-
+	<h1>Play RISK online</h1>
+	<p>If you are invited by the author of this site to play this game, please enter your name.</p>
+	<form>
+ 		<input type="text" value="" id="nameBox" name='usrname'>
+ 		<input type="button" value="Subscribe" id="submit" onclick="putCookie(document.getElementsByTagName('form'));">
+	</form>
+	<p id='Hello'></p>
+	<a href='play.html'>Go to the battle!</a>
 </body>
-
-</html>
+</html>      
