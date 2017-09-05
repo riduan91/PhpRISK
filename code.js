@@ -130,9 +130,12 @@ var last_card_order;
 var last_card_taken;
 var sound;
 
+var deactivated = 0;
+
 window.onload = function(){
-	setInterval(function(){
-	loadDoc("getinfo.php")}, 2000);
+	if (!deactivated)
+		setInterval(function(){
+			loadDoc("getinfo.php")}, 2000);		
 }
 
 function loadDoc(url) {
@@ -250,7 +253,7 @@ function resetnow(){
 	attacking_territory_from = -1;
 	attacking_territory_to = -1;
 	
-	last_card_order = 35 + Math.floor(Math.random() * 20);
+	last_card_order = 30 + Math.floor(Math.random() * 12);
 	last_card = double_shuffled_cards[last_card_order];
 
 	last_card_taken = 0;
@@ -725,7 +728,7 @@ function printUpdateZone(){
 	}
 	
 	if (attacking && territories_by_player[attacking_territory_to] == current_player && sound >= 1){
-		document.getElementById("gunsound").src = "gun.mp3";
+		document.getElementById("gunsound").src = "gun.wav";
 		sound = (sound + 1)%3;
 		s = "sound=" + sound;
 		updateSql(s);
@@ -1488,6 +1491,7 @@ function changerange(){
 }
 
 function updateSql(s){
+	deactivated = 1;
 	var xhttp2 = new XMLHttpRequest();
 	
 	xhttp2.onreadystatechange = function() {
@@ -1496,6 +1500,7 @@ function updateSql(s){
 			document.getElementById("private_data").innerHTML = this.responseText;
 			if (sound <= 1)
 				reload();
+			deactivated = 0;
 		}
 	};
 
