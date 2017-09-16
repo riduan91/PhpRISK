@@ -166,6 +166,8 @@ function reload() {
 	
 	printPlayerMap();
 	
+	printDeck();
+	
 	printCards();
 		
 	printMission();
@@ -488,6 +490,18 @@ function printCircles(i){
     context.textAlign = 'center';
     context.textBaseline = "middle"; 
     context.fillText(parseInt(nb_soldiers_on_territory[i]), centerX, centerY);
+}
+
+function printDeck(){
+	if (battleStatusSum() >= STATUS_ACTIVE_FOR_FIRST_DISTRIBUTION){
+		document.getElementById("last_card").style.display = "none";
+		document.getElementById("full_deck").style.display = "block";
+		document.getElementById("deck" + last_card_order).style["border-color"] = "red";
+		
+	} else {
+		document.getElementById("last_card").style.display = "block";
+		document.getElementById("full_deck").style.display = "none";
+	}
 }
 	
 function printCards(){
