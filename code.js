@@ -131,11 +131,12 @@ var last_card_taken;
 var sound;
 
 var deactivated = 0;
+var active_player_changed = 0;
 
 window.onload = function(){
-	if (!deactivated)
-		setInterval(function(){
-			loadDoc("getinfo.php")}, 2000);		
+	setInterval(function(){
+		loadDoc("getinfo.php")
+	}, 2000);		
 }
 
 function loadDoc(url) {
@@ -152,39 +153,46 @@ function loadDoc(url) {
 }
 
 function reload() {
-	if (getCookie('userName') == 'SUPERADMIN'){
-		document.getElementById("namestring").style.display = 'block';
-		document.getElementById("reset").style.display = 'block';
-		return;
-	} else {
-		document.getElementById("reset").style.display = 'none';
+	console.log("load and see " + deactivated);
+	if (!deactivated){
+		deactivated = 1;
+		if (getCookie('userName') == 'SUPERADMIN'){
+			document.getElementById("namestring").style.display = 'block';
+			document.getElementById("reset").style.display = 'block';
+			deactivated = 0
+			return;
+		} else {
+			document.getElementById("reset").style.display = 'none';
+		}
+
+		parseDataFromPHP()
+	
+		printMap();
+	
+		printPlayerMap();
+	
+		printDeck();
+	
+		printCards();
+		
+		printMission();
+		
+		printDices();
+		
+		printNotification();
+
+		printNextTuneInInformation();
+		
+		printUpdateZone();
+		deactivated = 0;
 	}
-
-	parseDataFromPHP()
-	
-	printMap();
-	
-	printPlayerMap();
-	
-	printDeck();
-	
-	printCards();
-		
-	printMission();
-		
-	printDices();
-		
-	printNotification();
-
-	printNextTuneInInformation();
-		
-	printUpdateZone();
 }
 
 
 function resetnow(){
 	
 	names = document.getElementById("namestring").value.split("-");
+	shuffle(names);
 	nb_players = names.length;
 	
 	territories_by_player = new Array(42+1).join('0').split('').map(parseInt);
@@ -255,7 +263,7 @@ function resetnow(){
 	attacking_territory_from = -1;
 	attacking_territory_to = -1;
 	
-	last_card_order = 30 + Math.floor(Math.random() * 12);
+	last_card_order = 25 + Math.floor(Math.random() * 17);
 	last_card = double_shuffled_cards[last_card_order];
 
 	last_card_taken = 0;
@@ -392,6 +400,7 @@ function parseDataFromPHP(){
 
 function printMap(){
 	for (var i = 0; i < NB_TERRITORIES; ++i){
+		
 		if (attacking_territory_from == i || attacking_territory_to == i){
 			document.getElementById('territory' + i).style.opacity = 0.5
 		}
@@ -496,7 +505,9 @@ function printDeck(){
 	if (battleStatusSum() >= STATUS_ACTIVE_FOR_FIRST_DISTRIBUTION){
 		document.getElementById("last_card").style.display = "none";
 		document.getElementById("full_deck").style.display = "block";
-		document.getElementById("deck" + last_card_order).style["border-color"] = "red";
+		document.getElementById("deck" + last_card_order).style.border = "2px solid #FF0000";
+		document.getElementById("deck" + last_card_order).style.width = "136px";
+		document.getElementById("deck" + last_card_order).style.height = "216px";
 		
 	} else {
 		document.getElementById("last_card").style.display = "block";
@@ -513,6 +524,9 @@ function printCards(){
 	for (var i = 0; i < cards_held_by_player[current_player].length; ++i){
 		var card = document.getElementById('card' + i);
 		card.style.display = 'block';
+		if (battle_status[current_player] != STATUS_ACTIVE_FOR_TUNE_IN){
+			card.style.opacity = 1;
+		}
 		card.onclick = function(a1, a2, a3) { return function(){ updowncard(a1, a2, a3) }}(current_player == active_player ? 1 : 0, current_player, i);
     }
 	
@@ -603,14 +617,31 @@ function printDices(){
 };
 		
 function printNotification(){
-	
-	if (battle_status[current_player] > 0)
-		document.getElementById("whoseturn").innerHTML = "Your turn"
-	else if (battle_status[active_player] < 10)
-		document.getElementById("whoseturn").innerHTML = names[active_player] + "'s turn"
-	else
-		document.getElementById("whoseturn").innerHTML = "Distribution"
-	
+	var pseudo_names = "";
+	if (active_player_changed){
+		ele = document.getElementById("whoseturn")
+		while (ele.hasChildNodes()) {
+			ele.removeChild(ele.firstChild);
+		}
+		active_player_changed = 0;
+	}
+	if (document.getElementById("whoseturn").childElementCount == 0){
+		for (var i = 0; i < names.length; ++i){
+			var node = document.createElement("div");
+			node.style.color = COLOR[i];
+			node.style.display = "inline";
+			var inc = "";
+			if (i < nb_players - 1)
+				inc = " - "
+			node.innerHTML = names[i];
+			if (battle_status[active_player] < 10 && i == active_player)
+				node.innerHTML = "<u>" + names[i] + "</u>" + inc;
+			else
+				node.innerHTML = names[i] + inc;
+			document.getElementById("whoseturn").appendChild(node);
+		}	
+	}
+
 	//FIRST DISTRIBUTION
 	if (battleStatusSum() >= STATUS_ACTIVE_FOR_FIRST_DISTRIBUTION){
 		document.getElementById("whichstep").innerHTML = "Initial distribution";
@@ -822,10 +853,11 @@ function brighten(i){
 }
 
 function darken(i){
-	if (!attacking || attacking_territory_to != i)
-		document.getElementById("territory" + i).style.opacity = 1;
-	else
+	if ((attacking && attacking_territory_to == i) || (save && attacking_territory_from == i))
 		document.getElementById("territory" + i).style.opacity = 0.5;
+	else{
+		document.getElementById("territory" + i).style.opacity = 1;
+	}
 }
 
 function updowncard(active, player, card){
@@ -895,34 +927,35 @@ function updownmission(){
 //ADDMANY-----------------------------------
 
 function addMany(player, territory, number){
-	if (okForAddMany(player, territory, number)){
-		nb_soldiers_on_territory[territory] += number;
-		available_soldiers_to_add[player] -= number;
-	}		
+	if (!deactivated){
+		deactivated = 1;
 		
-	if (available_soldiers_to_add[player] == 0){
-		if (battleStatusSum() >= 10){
-			battle_status[player] = 0;
-			if (battleStatusSum() == 0){
-				battle_status[0] = 1;
+		if (okForAddMany(player, territory, number)){
+			nb_soldiers_on_territory[territory] += number;
+			available_soldiers_to_add[player] -= number;
+		}		
+		
+		if (available_soldiers_to_add[player] == 0){
+			if (battleStatusSum() >= 10){
+				battle_status[player] = 0;
+				if (battleStatusSum() == 0){
+					battle_status[0] = 1;
+				}
+			}
+			
+			else {
+				if (battleStatusSum() < 10 && battle_status[current_player] <= 2)
+				goToNextStep();
 			}
 		}
-			
-		else {
-			if (battleStatusSum() < 10 && battle_status[current_player] <= 2)
-				goToNextStep();
-		}
-	}
 	
-	var s = "";
-	s += "t" + territory + "=" + nb_soldiers_on_territory[territory];
-	s += "&r" + player + "=" + available_soldiers_to_add[player];
-	s += "&battle_status=" + battle_status.join();
-
-	updateSql(s);
-	printPlayerMap();
-	printNotification();
-
+		var s = "";
+		s += "t" + territory + "=" + nb_soldiers_on_territory[territory];
+		s += "&r" + player + "=" + available_soldiers_to_add[player];
+		s += "&battle_status=" + battle_status.join();
+		
+		updateSql(s);
+	} 
 }
 
 function okForAddMany(player, territory, number){
@@ -1001,30 +1034,37 @@ function getTerritoriesOccupedBy(player){
 
 
 function tuneIn(player, card1, card2, card3){
-	if (battle_status[player] != STATUS_ACTIVE_FOR_TUNE_IN){
-		return;
-	}
-		
-	if (!ableToTurnIn(player)){
-		finishTuneIn(player);
-		return;
-	}
+	if (!deactivated){
+		deactivated = 1;
 	
-	var a = SYMBOL_ON_CARD[card1];
-	var b = SYMBOL_ON_CARD[card2];
-	var c = SYMBOL_ON_CARD[card3];
-		
-	if ((a==b && b==c) || a*a + b*b + c*c == 5){
-		//Only one of the following will have effects
-		for (var i = cards_held_by_player[player].length - 1; i >= 0 ; --i){
-			if (cards_held_by_player[player][i] == card1 || cards_held_by_player[player][i] == card2 || cards_held_by_player[player][i] == card3)
-				cards_held_by_player[player].splice(i, 1);
-			}
-			available_soldiers_to_add[player] += NB_TUNED_IN_SOLDIERS[next_tune_in_index];
-			next_tune_in_index ++;
+		if (battle_status[player] != STATUS_ACTIVE_FOR_TUNE_IN){
+			deactivated = 0;
+			return;
 		}
 		
-	finishTuneIn(player);
+		if (!ableToTurnIn(player)){
+			deactivated = 0;
+			finishTuneIn(player);
+			return;
+		}
+	
+		var a = SYMBOL_ON_CARD[card1];
+		var b = SYMBOL_ON_CARD[card2];
+		var c = SYMBOL_ON_CARD[card3];
+		
+		if ((a==b && b==c) || a*a + b*b + c*c == 5){
+			//Only one of the following will have effects
+			for (var i = cards_held_by_player[player].length - 1; i >= 0 ; --i){
+				if (cards_held_by_player[player][i] == card1 || cards_held_by_player[player][i] == card2 || cards_held_by_player[player][i] == card3)
+					cards_held_by_player[player].splice(i, 1);
+				}
+				available_soldiers_to_add[player] += NB_TUNED_IN_SOLDIERS[next_tune_in_index];
+				next_tune_in_index ++;
+			}
+	
+		deactivated = 0;
+		finishTuneIn(player);
+	}
 }
 
 function ableToTurnIn(player){
@@ -1054,30 +1094,34 @@ function hasThreeOfDifferentKinds(symbols, player){
 }
 
 function finishTuneIn(player){
-	if (!okForFinishTuneIn(player)){
-		return;
-	}
+	if (!deactivated){
+		deactivated = 1;
+	
+		if (!okForFinishTuneIn(player)){
+			deactivated = 0;
+			return;
+		}
 		
-	if (!obligedToTuneIn(player)){
-		available_soldiers_to_add[player] += pointsFromTerritories(player) + pointsFromContinents(player);
-		goToNextStep();
-	} else {
-		return;
-	}
+		if (!obligedToTuneIn(player)){
+			available_soldiers_to_add[player] += pointsFromTerritories(player) + pointsFromContinents(player);
+			goToNextStep();
+		} else {
+			deactivated = 0;
+			return;
+		}
 	
-	var s = "";
-	s += "cards_held_by_player=" + cards_held_by_player[0].join();
-	for (var i = 1; i < nb_players; ++i){
-		s += ";";
-		s += cards_held_by_player[i].join();
+		var s = "";
+		s += "cards_held_by_player=" + cards_held_by_player[0].join();
+		for (var i = 1; i < nb_players; ++i){
+			s += ";";
+			s += cards_held_by_player[i].join();
+		}
+		s += "&r" + player + "=" + available_soldiers_to_add[player];
+		s += "&battle_status=" + battle_status.join();
+		s += "&next_tune_in_index=" + next_tune_in_index;
+		
+		updateSql(s);
 	}
-	s += "&r" + player + "=" + available_soldiers_to_add[player];
-	s += "&battle_status=" + battle_status.join();
-	s += "&next_tune_in_index=" + next_tune_in_index;
-	
-	updateSql(s);
-	printCards();
-	printNotification();
 }
 
 function obligedToTuneIn(player){
@@ -1195,20 +1239,20 @@ function isAustraliaControlledBy(player){
 //---------------------------------
 
 function tosave(player, territory){
-	attacking_territory_from = territory;
-	save = 1;
-	resetDices();
+	if (!deactivated){
+		deactivated = 1;
 	
-	var s = "save=" + save;
-	s += "&attack_dices=" + attack_dices.join();
-	s += "&defend_dices=" + defend_dices.join();
-	s += "&attacking_territory_from=" + attacking_territory_from;
-	updateSql(s);
+		attacking_territory_from = territory;
+		save = 1;
+		resetDices();
 	
-	printMap();
-	printNotification();
-	printPlayerMap();
-	printDices();
+		var s = "save=" + save;
+		s += "&attack_dices=" + attack_dices.join();
+		s += "&defend_dices=" + defend_dices.join();
+		s += "&attacking_territory_from=" + attacking_territory_from;
+		
+		updateSql(s);
+	}
 }
 
 function resetDices(){
@@ -1218,23 +1262,24 @@ function resetDices(){
 //---------------------------------
 
 function attack(player, territory_from, territory_to, number){
-	if (okForAttack(player, territory_from, territory_to, number)){
-		attacking_territory_to = territory_to;
-		attacking = 1;
-
-		attack_dices = Array(number).fill(0).map(makeARandomNumber);
-		attack_dices.sort(function(x, y){ return y - x} );
-	}
+	if (!deactivated){
+		deactivated = 1;
 	
-	var s = "attacking=" + attacking;
-	s += "&attack_dices=" + attack_dices.join();
-	s += "&attacking_territory_to=" + attacking_territory_to;
-	s += "&sound=1";
-	updateSql(s);
-	printMap();
-	printNotification();
-	printPlayerMap();
-	printDices();
+		if (okForAttack(player, territory_from, territory_to, number)){
+			attacking_territory_to = territory_to;
+			attacking = 1;
+
+			attack_dices = Array(number).fill(0).map(makeARandomNumber);
+			attack_dices.sort(function(x, y){ return y - x} );
+		}
+	
+		var s = "attacking=" + attacking;
+		s += "&attack_dices=" + attack_dices.join();
+		s += "&attacking_territory_to=" + attacking_territory_to;
+		s += "&sound=1";
+		
+		updateSql(s);
+	}
 }
 
 
@@ -1287,40 +1332,40 @@ function okForAttack(player, territory_from, territory_to, number){
 }
 
 function defend(player, territory_from, territory_to){
+	if (!deactivated){
+		deactivated = 1;
 	
-	defend_dices = Array(Math.min(2, nb_soldiers_on_territory[territory_to])).fill(0).map(makeARandomNumber); 
-	defend_dices.sort(function(x, y){ return y - x} );
+		defend_dices = Array(Math.min(2, nb_soldiers_on_territory[territory_to])).fill(0).map(makeARandomNumber); 
+		defend_dices.sort(function(x, y){ return y - x} );
 	
-	var res_of_attack = compare(attack_dices, defend_dices);
+		var res_of_attack = compare(attack_dices, defend_dices);
 	
-	nb_soldiers_on_territory[territory_from] += res_of_attack[0];
-	nb_soldiers_on_territory[territory_to] += res_of_attack[1];
+		nb_soldiers_on_territory[territory_from] += res_of_attack[0];
+		nb_soldiers_on_territory[territory_to] += res_of_attack[1];
 	
-	if (nb_soldiers_on_territory[territory_to] == 0){
-		territories_by_player[territory_to] = territories_by_player[territory_from];
-		nb_soldiers_on_territory[territory_to] += Math.min(3, nb_soldiers_on_territory[territory_from] - 1);
-		nb_soldiers_on_territory[territory_from] -= Math.min(3, nb_soldiers_on_territory[territory_from] - 1);
+		if (nb_soldiers_on_territory[territory_to] == 0){
+			territories_by_player[territory_to] = territories_by_player[territory_from];
+			nb_soldiers_on_territory[territory_to] += Math.min(3, nb_soldiers_on_territory[territory_from] - 1);
+			nb_soldiers_on_territory[territory_from] -= Math.min(3, nb_soldiers_on_territory[territory_from] - 1);
+		}
+	
+		attacking = 0;
+		save = 0;
+		attacking_territory_from = -1;
+		attacking_territory_to = -1;
+	
+		var s = "attacking=" + attacking;
+		s += "&save=" + save;
+		s += "&attacking_territory_from=" + attacking_territory_from;
+		s += "&attacking_territory_to=" + attacking_territory_to;
+		s += "&defend_dices=" + defend_dices.join();
+		s += "&territories_by_player=" + territories_by_player.join();
+		s += "&t" + territory_from + "=" + nb_soldiers_on_territory[territory_from];
+		s += "&t" + territory_to + "=" + nb_soldiers_on_territory[territory_to];
+		s += "&sound=0";
+		
+		updateSql(s);
 	}
-	
-	attacking = 0;
-	save = 0;
-	attacking_territory_from = -1;
-	attacking_territory_to = -1;
-	
-	var s = "attacking=" + attacking;
-	s += "&save=" + save;
-	s += "&attacking_territory_from=" + attacking_territory_from;
-	s += "&attacking_territory_to=" + attacking_territory_to;
-	s += "&defend_dices=" + defend_dices.join();
-	s += "&territories_by_player=" + territories_by_player.join();
-	s += "&t" + territory_from + "=" + nb_soldiers_on_territory[territory_from];
-	s += "&t" + territory_to + "=" + nb_soldiers_on_territory[territory_to];
-	s += "&sound=0";
-	updateSql(s);
-	printMap();
-	printNotification();
-	printPlayerMap();
-	printDices();
 }
 
 function okForDefend(player, territory_from, territory_to){
@@ -1349,47 +1394,49 @@ function compare(a, b){
 }
 
 function finishAttack(player){
-	if (battle_status[player] != STATUS_ACTIVE_FOR_ATTACK){
+	if (!deactivated){
+		deactivated = 1;
+	
+		if (battle_status[player] != STATUS_ACTIVE_FOR_ATTACK){
+			resetDices();
+			return;
+		}
+	
 		resetDices();
-		return;
-	}
-	
-	resetDices();
-	goToNextStep();
+		goToNextStep();
 
-	var s="attack_dices=" + attack_dices.join();
-	s += "&defend_dices=" + defend_dices.join();
-	s += "&battle_status=" + battle_status.join();
-	
-	updateSql(s);
-	printNotification();
-	printPlayerMap();
-	printDices();
+		var s="attack_dices=" + attack_dices.join();
+		s += "&defend_dices=" + defend_dices.join();
+		s += "&battle_status=" + battle_status.join();
+			
+		updateSql(s);
+	}
 }
 
 //-------------------------------------------------
 
 function fortify(player, territory_from, territory_to, number){
+	if (!deactivated){
+		deactivated = 1;
 
-	if (okForFortification(player, territory_from, territory_to, number)){
-		nb_soldiers_on_territory[territory_from] -= number;
-		nb_soldiers_on_territory[territory_to] += number;
-	}
+		if (okForFortification(player, territory_from, territory_to, number)){
+			nb_soldiers_on_territory[territory_from] -= number;
+			nb_soldiers_on_territory[territory_to] += number;
+		}
 	
-	attacking_territory_from = -1;
-	attacking_territory_to = -1;
+		attacking_territory_from = -1;
+		attacking_territory_to = -1;
 		
-	save = 0;
+		save = 0;
 	
-	var s="t" + territory_from + "=" + nb_soldiers_on_territory[territory_from];
-	s += "&t" + territory_to + "=" + nb_soldiers_on_territory[territory_to];
-	s += "&save=" + save;
-	s += "&attacking_territory_from=" + attacking_territory_from;
-	s += "&attacking_territory_to=" + attacking_territory_to;
-	
-	updateSql(s);
-	printNotification();
-	printPlayerMap();
+		var s="t" + territory_from + "=" + nb_soldiers_on_territory[territory_from];
+		s += "&t" + territory_to + "=" + nb_soldiers_on_territory[territory_to];
+		s += "&save=" + save;
+		s += "&attacking_territory_from=" + attacking_territory_from;
+		s += "&attacking_territory_to=" + attacking_territory_to;
+		
+		updateSql(s);
+	}
 }
 
 function okForFortification(player, territory_from, territory_to, number){
@@ -1438,26 +1485,31 @@ function explore(res, territory, player){
 }
 
 function finishFortification(player){
-	if (battle_status[player] != STATUS_ACTIVE_FOR_FORTIFICATION){
-		return;
-	}
-		
-	takeACard(player);
-	goToNextStep();
+	if (!deactivated){
+		deactivated = 1;
 	
-	var s="battle_status=" + battle_status.join();
-	s += "&double_shuffled_cards=" + double_shuffled_cards.join();
-	s += "&last_card_taken=" + last_card_taken;
-	s += "&current_card=" + current_card;
-	s += "&cards_held_by_player=" + cards_held_by_player[0].join();
-	for (var i = 1; i < nb_players; ++i){
-		s += ";";
-		s += cards_held_by_player[i].join();
+		if (battle_status[player] != STATUS_ACTIVE_FOR_FORTIFICATION){
+			deactivated = 0;
+			return;
+		}
+		
+		takeACard(player);
+		goToNextStep();
+	
+		var s="battle_status=" + battle_status.join();
+		s += "&double_shuffled_cards=" + double_shuffled_cards.join();
+		s += "&last_card_taken=" + last_card_taken;
+		s += "&current_card=" + current_card;
+		s += "&cards_held_by_player=" + cards_held_by_player[0].join();
+		for (var i = 1; i < nb_players; ++i){
+			s += ";";
+			s += cards_held_by_player[i].join();
+		}
+		
+		active_player_changed = 1;
+		
+		updateSql(s);
 	}
-	updateSql(s);
-	printNotification();
-	printPlayerMap();
-	printCards();
 }
 
 function takeACard(player){
@@ -1474,55 +1526,41 @@ function takeACard(player){
 
 //--------------------------------------
 
-function notify(){
-	if (battle_status[current_player] == STATUS_ACTIVE_FOR_DISTRIBUTION){
-		var number = document.getElementById("number").value;
-		document.getElementById("notification").innerHTML  = "Click on a territory you have to move " + number + " soldiers to."
-	}
-	
-	if (battle_status[current_player] == STATUS_ACTIVE_FOR_FORTIFICATION){
-		var number = document.getElementById("number").value;
-		document.getElementById("notification").innerHTML  = "Click on a territory you have to move " + number + " soldiers to."
-	}
-}
 
 
 function myundo(){
-	attacking_territory_from = -1;
-	save = 0;
+	if (!deactivated){
+		deactivated = 1;
 	
-	var s="attacking_territory_from=" + attacking_territory_from;
-	s += "&save=" + save;
+		attacking_territory_from = -1;
+		save = 0;
+	
+		var s="attacking_territory_from=" + attacking_territory_from;
+		s += "&save=" + save;
 		
-	updateSql(s);
-	printMap();
-	printPlayerMap();
-	printNotification();
+		updateSql(s);
+	}
 }
 
 function changerange(){
 	document.getElementById("number_sign").innerHTML = document.getElementById("number_range").value
 }
 
-function updateSql(s){
-	deactivated = 1;
+function updateSql(s, free=true){
 	var xhttp2 = new XMLHttpRequest();
 	
 	xhttp2.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			console.log(s);
 			document.getElementById("private_data").innerHTML = this.responseText;
-			if (sound <= 1)
-				reload();
+			reload();
 			deactivated = 0;
 		}
 	};
 
 	xhttp2.open("GET", "updateSql.php?" + s, true);
 	xhttp2.send();
-	
 }
-
 
 function getCookie(cname) {
     var name = cname + "=";
@@ -1593,7 +1631,7 @@ function winner(){
 	for (var player = 0; player < nb_players; player++){
 		if (missionCompleted(player)){
 			winners.push(player);
-			return winners;
+			return names[winners];
 		}
 	}
 
@@ -1606,7 +1644,7 @@ function winner(){
 		
 	for (var player = 0; player < nb_players; player++){
 		if (getTerritoriesOccupedBy(player).length == max){
-			winners.push(player);
+			winners.push(names[player]);
 		}			
 	}
 		
