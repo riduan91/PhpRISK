@@ -164,7 +164,7 @@ function reload() {
 		} else {
 			document.getElementById("reset").style.display = 'none';
 		}
-
+		
 		parseDataFromPHP()
 	
 		printMap();
@@ -388,7 +388,7 @@ function parseDataFromPHP(){
 	active_player = currentActivePlayer();
 	
 	if (battle_status[active_player] == 1 && !ableToTurnIn(active_player)){
-		finishTuneIn(active_player);
+		finishTuneIn(active_player, true);
 	}
 	
 	for (var i = 0; i < nb_players; ++i){
@@ -954,6 +954,9 @@ function addMany(player, territory, number){
 		s += "&r" + player + "=" + available_soldiers_to_add[player];
 		s += "&battle_status=" + battle_status.join();
 		
+		printPlayerMap()
+		printNotification()
+		
 		updateSql(s);
 	} 
 }
@@ -1043,8 +1046,7 @@ function tuneIn(player, card1, card2, card3){
 		}
 		
 		if (!ableToTurnIn(player)){
-			deactivated = 0;
-			finishTuneIn(player);
+			finishTuneIn(player, true);
 			return;
 		}
 	
@@ -1062,8 +1064,7 @@ function tuneIn(player, card1, card2, card3){
 				next_tune_in_index ++;
 			}
 	
-		deactivated = 0;
-		finishTuneIn(player);
+		finishTuneIn(player, true);
 	}
 }
 
@@ -1093,15 +1094,15 @@ function hasThreeOfDifferentKinds(symbols, player){
 	return symbols.indexOf(HUMAN) >= 0 && symbols.indexOf(HORSE) >= 0 && symbols.indexOf(CANON) >= 0;
 }
 
-function finishTuneIn(player){
-	if (!deactivated){
+function finishTuneIn(player, force = false){
+	if (!deactivated || force){
 		deactivated = 1;
-	
+
 		if (!okForFinishTuneIn(player)){
 			deactivated = 0;
 			return;
 		}
-		
+
 		if (!obligedToTuneIn(player)){
 			available_soldiers_to_add[player] += pointsFromTerritories(player) + pointsFromContinents(player);
 			goToNextStep();
@@ -1109,7 +1110,7 @@ function finishTuneIn(player){
 			deactivated = 0;
 			return;
 		}
-	
+
 		var s = "";
 		s += "cards_held_by_player=" + cards_held_by_player[0].join();
 		for (var i = 1; i < nb_players; ++i){
@@ -1119,7 +1120,9 @@ function finishTuneIn(player){
 		s += "&r" + player + "=" + available_soldiers_to_add[player];
 		s += "&battle_status=" + battle_status.join();
 		s += "&next_tune_in_index=" + next_tune_in_index;
-		
+
+		printCards();
+		printNotification()
 		updateSql(s);
 	}
 }
@@ -1251,6 +1254,7 @@ function tosave(player, territory){
 		s += "&defend_dices=" + defend_dices.join();
 		s += "&attacking_territory_from=" + attacking_territory_from;
 		
+		printPlayerMap()
 		updateSql(s);
 	}
 }
@@ -1277,6 +1281,9 @@ function attack(player, territory_from, territory_to, number){
 		s += "&attack_dices=" + attack_dices.join();
 		s += "&attacking_territory_to=" + attacking_territory_to;
 		s += "&sound=1";
+		
+		printPlayerMap();
+		printDices();
 		
 		updateSql(s);
 	}
@@ -1364,6 +1371,9 @@ function defend(player, territory_from, territory_to){
 		s += "&t" + territory_to + "=" + nb_soldiers_on_territory[territory_to];
 		s += "&sound=0";
 		
+		printPlayerMap();
+		printDices();
+		printNotification();
 		updateSql(s);
 	}
 }
@@ -1408,7 +1418,8 @@ function finishAttack(player){
 		var s="attack_dices=" + attack_dices.join();
 		s += "&defend_dices=" + defend_dices.join();
 		s += "&battle_status=" + battle_status.join();
-			
+		
+		printNotification();
 		updateSql(s);
 	}
 }
@@ -1435,6 +1446,8 @@ function fortify(player, territory_from, territory_to, number){
 		s += "&attacking_territory_from=" + attacking_territory_from;
 		s += "&attacking_territory_to=" + attacking_territory_to;
 		
+		printPlayerMap();
+		printNotification();
 		updateSql(s);
 	}
 }
@@ -1507,6 +1520,8 @@ function finishFortification(player){
 		}
 		
 		active_player_changed = 1;
+		printNotification();
+		printCards();
 		
 		updateSql(s);
 	}
@@ -1537,6 +1552,9 @@ function myundo(){
 	
 		var s="attacking_territory_from=" + attacking_territory_from;
 		s += "&save=" + save;
+		
+		printPlayerMap();
+		printNotification();
 		
 		updateSql(s);
 	}
