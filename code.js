@@ -129,6 +129,8 @@ var last_card;
 var last_card_order;
 var last_card_taken;
 var sound;
+var version;
+var local_version = 0;
 
 var deactivated = 0;
 var active_player_changed = 0;
@@ -136,7 +138,7 @@ var active_player_changed = 0;
 window.onload = function(){
 	setInterval(function(){
 		loadDoc("getinfo.php")
-	}, 2000);		
+	}, 1000);		
 }
 
 function loadDoc(url) {
@@ -153,7 +155,8 @@ function loadDoc(url) {
 }
 
 function reload() {
-	console.log("load and see " + deactivated);
+	console.log("version " + version);
+	console.log("local version " + local_version);
 	if (!deactivated){
 		deactivated = 1;
 		if (getCookie('userName') == 'SUPERADMIN'){
@@ -165,25 +168,31 @@ function reload() {
 			document.getElementById("reset").style.display = 'none';
 		}
 		
-		parseDataFromPHP()
-	
-		printMap();
-	
-		printPlayerMap();
-	
-		printDeck();
-	
-		printCards();
-		
-		printMission();
-		
-		printDices();
-		
-		printNotification();
 
-		printNextTuneInInformation();
+		if (parseDataFromPHP()){
+			console.log("Parsing");
+			local_version = version;
+				
+			printMap();
+	
+			printPlayerMap();
+	
+			printDeck();
+	
+			printCards();
 		
-		printUpdateZone();
+			printMission();
+		
+			printDices();
+		
+			printNotification();
+
+			printNextTuneInInformation();
+		
+			printUpdateZone();
+			
+		}
+		
 		deactivated = 0;
 	}
 }
@@ -268,6 +277,8 @@ function resetnow(){
 
 	last_card_taken = 0;
 	sound = 0;
+	version = 0;
+	local_version = 0;
 	
 	var s = "";
 	s += "nb_players=" + nb_players;
@@ -282,6 +293,8 @@ function resetnow(){
 	s += "&last_card_order=" + last_card_order;
 	s += "&last_card_taken=" + last_card_taken;
 	s += "&sound=" + sound;
+	s += "&version=" + version;
+	s += "&local_version=" + version;
 	s += "&names=" + names.join();
 	s += "&territories_by_player=" + territories_by_player.join();
 	
@@ -384,6 +397,7 @@ function parseDataFromPHP(){
 	last_card_order = parseInt(document.getElementById("r_last_card_order").value);
 	last_card_taken = parseInt(document.getElementById("r_last_card_taken").value);
 	sound = parseInt(document.getElementById("r_sound").value);
+	version = parseInt(document.getElementById("r_version").value);
 	
 	active_player = currentActivePlayer();
 	
@@ -396,6 +410,8 @@ function parseDataFromPHP(){
 			current_player = i;
 		}
 	}
+	
+	return version >= local_version;
 }
 
 function printMap(){
@@ -1254,7 +1270,9 @@ function tosave(player, territory){
 		s += "&defend_dices=" + defend_dices.join();
 		s += "&attacking_territory_from=" + attacking_territory_from;
 		
-		printPlayerMap()
+		printMap();
+		printPlayerMap();
+		printNotification();
 		updateSql(s);
 	}
 }
@@ -1576,7 +1594,7 @@ function updateSql(s, free=true){
 		}
 	};
 
-	xhttp2.open("GET", "updateSql.php?" + s, true);
+	xhttp2.open("GET", "updateSql.php?" + s + "&version=" + (version + 1), true);
 	xhttp2.send();
 }
 
